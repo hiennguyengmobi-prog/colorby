@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Colorby Pro - Custom Color Match Intensity</title>
+  <style>
+    :root {
+      --bg: #0a0a0c;
+      --card-bg: #16161a;
+      --border: #27272a;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --text: #f4f4f5;
+      --text-sub: #a1a1aa;
+      --green: #10b981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 500px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+    }
+
+    .header { text-align: center; }
+    .header h1 { font-size: 18px; font-weight: 700; color: #fff; }
+    .header p { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+
+    /* Workspace Canvas */
+    .workspace {
+      position: relative;
+      width: 100%;
+      height: 300px;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .workspace canvas {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .placeholder-text {
+      position: absolute;
+      color: var(--text-sub);
+      font-size: 13px;
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* Ref Preview */
+    .ref-preview-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #111;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 12px;
+    }
+    #refThumb {
+      width: 36px;
+      height: 36px;
+      border-radius: 4px;
+      object-fit: cover;
+      background: #333;
+      display: none;
+    }
+
+    .upload-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .upload-btn-box {
+      background: #1f1f23;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-sub);
+      transition: 0.2s;
+    }
+    .upload-btn-box:hover { border-color: var(--accent); color: #fff; }
+    .upload-btn-box input { display: none; }
+
+    /* Sliders */
+    .control-box {
+      background: #111115;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+    .slider-label span.val { color: var(--accent); font-weight: bold; }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .btn-main {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .btn-main:hover { background: var(--accent-hover); }
+    .btn-green { background: var(--green); }
+    .btn-green:hover { background: #059669; }
+    .btn-sec { background: #202327; color: #fff; border: 1px solid var(--border); }
+    .btn-sec:hover { background: #2c3036; }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    #statusLog {
+      font-size: 11px;
+      color: var(--text-sub);
+      text-align: center;
+      min-height: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <div class="header">
+      <h1>Colorby Pro - Mix Ratio Matcher</h1>
+      <p>Tùy chỉnh tỷ lệ pha màu linh hoạt từ ảnh mẫu</p>
+    </div>
+
+    <!-- Màn hình Canvas -->
+    <div class="workspace" id="workspace">
+      <div class="placeholder-text" id="placeholderText">📸 Tải ảnh của bạn & Chọn ảnh mẫu màu bên dưới</div>
+      <canvas id="imageCanvas" style="display: none;"></canvas>
+    </div>
+
+    <div id="statusLog">Sẵn sàng</div>
+
+    <!-- Chọn ảnh -->
+    <div class="upload-grid">
+      <label class="upload-btn-box">
+        📂 Chọn Ảnh Của Bạn
+        <input type="file" id="uploadTarget" accept="image/*" />
+      </label>
+      <label class="upload-btn-box" style="border-style: solid; border-color: #3b82f6;">
+        🎨 Chọn Ảnh Mẫu (Ref)
+        <input type="file" id="uploadRef" accept="image/*" />
+      </label>
+    </div>
+
+    <!-- Thông tin ảnh mẫu -->
+    <div class="ref-preview-container">
+      <img id="refThumb" />
+      <span id="refStatusText" style="color: var(--text-sub);">Chưa chọn ảnh mẫu màu.</span>
+    </div>
+
+    <!-- Nút thực hiện Color Match -->
+    <button class="btn-main" id="btnColorMatch">✨ Khớp Màu Theo Ảnh Mẫu (True Color Match)</button>
+
+    <!-- BỘ ĐIỀU CHỈNH TỶ LỆ PHA MÀU (BLEND CONTROLS) -->
+    <div class="control-box" id="controlBox" style="opacity: 0.6; pointer-events: none;">
+      <div class="slider-group">
+        <div class="slider-label">
+          <span>🎚️ Mức độ áp dụng màu mẫu (Mix Ratio)</span>
+          <span class="val" id="valBlend">100%</span>
+        </div>
+        <input type="range" id="sliderBlend" min="0" max="100" value="100">
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label">
+          <span>🎨 Độ bão hòa màu (Saturation)</span>
+          <span class="val" id="valSat">100%</span>
+        </div>
+        <input type="range" id="sliderSat" min="0" max="200" value="100">
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-main btn-sec" id="btnCompare">👁️ Giữ để xem Ảnh Gốc</button>
+      <button class="btn-main btn-green" id="btnDownload">📥 Tải Ảnh Đã Pha Màu</button>
+    </div>
+  </div>
+
+  <script>
+    const uploadTarget = document.getElementById('uploadTarget');
+    const uploadRef = document.getElementById('uploadRef');
+    const imageCanvas = document.getElementById('imageCanvas');
+    const ctx = imageCanvas.getContext('2d', { willReadFrequently: true });
+    const placeholderText = document.getElementById('placeholderText');
+    const statusLog = document.getElementById('statusLog');
+    const refThumb = document.getElementById('refThumb');
+    const refStatusText = document.getElementById('refStatusText');
+    const controlBox = document.getElementById('controlBox');
+    const sliderBlend = document.getElementById('sliderBlend');
+    const sliderSat = document.getElementById('sliderSat');
+    const valBlend = document.getElementById('valBlend');
+    const valSat = document.getElementById('valSat');
+
+    let targetImg = new Image();
+    let refImg = new Image();
+    let isTargetLoaded = false;
+    let isRefLoaded = false;
+
+    // Bộ lưu trữ dữ liệu Pixel
+    let originalPixels = null;  // Dữ liệu pixel gốc của ảnh target
+    let matchedPixels = null;   // Dữ liệu pixel đã biến đổi 100% theo ảnh mẫu
+
+    // 1. Tải ảnh mục tiêu
+    uploadTarget.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const url = URL.createObjectURL(file);
+        targetImg.onload = () => {
+          imageCanvas.width = targetImg.naturalWidth;
+          imageCanvas.height = targetImg.naturalHeight;
+          ctx.drawImage(targetImg, 0, 0);
+
+          const imgData = ctx.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
+          originalPixels = new Uint8ClampedArray(imgData.data);
+          matchedPixels = null;
+
+          imageCanvas.style.display = 'block';
+          placeholderText.style.display = 'none';
+          isTargetLoaded = true;
+          statusLog.innerText = "✅ Đã tải ảnh gốc thành công!";
+        };
+        targetImg.src = url;
+      }
+    });
+
+    // 2. Tải ảnh mẫu (Reference)
+    uploadRef.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const url = URL.createObjectURL(file);
+        refImg.onload = () => {
+          refThumb.src = url;
+          refThumb.style.display = 'block';
+          refStatusText.innerText = "Đã nạp ảnh mẫu: " + file.name;
+          isRefLoaded = true;
+          statusLog.innerText = "🎨 Đã nhận diện ảnh mẫu màu sắc!";
+        };
+        refImg.src = url;
+      }
+    });
+
+    // 3. Thuật toán phân tích ma trận màu & Tạo bản màu khớp 100%
+    document.getElementById('btnColorMatch').addEventListener('click', () => {
+      if (!isTargetLoaded) { alert("Vui lòng chọn ảnh của bạn trước!"); return; }
+      if (!isRefLoaded) { alert("Vui lòng chọn ảnh mẫu (Reference Photo)!"); return; }
+
+      statusLog.innerText = "⏳ Đang tính toán ma trận màu mẫu...";
+
+      setTimeout(() => {
+        // Đọc pixel ảnh mẫu
+        const refCanvas = document.createElement('canvas');
+        const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
+        refCanvas.width = refImg.naturalWidth;
+        refCanvas.height = refImg.naturalHeight;
+        refCtx.drawImage(refImg, 0, 0);
+        const refPixels = refCtx.getImageData(0, 0, refCanvas.width, refCanvas.height).data;
+
+        // Tính Mean & StdDev ảnh mẫu
+        let rSum = 0, gSum = 0, bSum = 0;
+        const totalRef = refPixels.length / 4;
+        for (let i = 0; i < refPixels.length; i += 4) {
+          rSum += refPixels[i]; gSum += refPixels[i+1]; bSum += refPixels[i+2];
+        }
+        const rMeanRef = rSum / totalRef, gMeanRef = gSum / totalRef, bMeanRef = bSum / totalRef;
+
+        let rVar = 0, gVar = 0, bVar = 0;
+        for (let i = 0; i < refPixels.length; i += 4) {
+          rVar += Math.pow(refPixels[i] - rMeanRef, 2);
+          gVar += Math.pow(refPixels[i+1] - gMeanRef, 2);
+          bVar += Math.pow(refPixels[i+2] - bMeanRef, 2);
+        }
+        const rStdRef = Math.sqrt(rVar / totalRef) || 1;
+        const gStdRef = Math.sqrt(gVar / totalRef) || 1;
+        const bStdRef = Math.sqrt(bVar / totalRef) || 1;
+
+        // Tính Mean & StdDev ảnh gốc
+        let trSum = 0, tgSum = 0, tbSum = 0;
+        const totalTarget = originalPixels.length / 4;
+        for (let i = 0; i < originalPixels.length; i += 4) {
+          trSum += originalPixels[i]; tgSum += originalPixels[i+1]; tbSum += originalPixels[i+2];
+        }
+        const rMeanTar = trSum / totalTarget, gMeanTar = tgSum / totalTarget, bMeanTar = tbSum / totalTarget;
+
+        let trVar = 0, tgVar = 0, tbVar = 0;
+        for (let i = 0; i < originalPixels.length; i += 4) {
+          trVar += Math.pow(originalPixels[i] - rMeanTar, 2);
+          tgVar += Math.pow(originalPixels[i+1] - gMeanTar, 2);
+          tbVar += Math.pow(originalPixels[i+2] - bMeanTar, 2);
+        }
+        const rStdTar = Math.sqrt(trVar / totalTarget) || 1;
+        const gStdTar = Math.sqrt(tgVar / totalTarget) || 1;
+        const bStdTar = Math.sqrt(tbVar / totalTarget) || 1;
+
+        // Tạo mảng pixel khớp 100%
+        matchedPixels = new Uint8ClampedArray(originalPixels.length);
+        for (let i = 0; i < originalPixels.length; i += 4) {
+          let r = (originalPixels[i] - rMeanTar) * (rStdRef / rStdTar) + rMeanRef;
+          let g = (originalPixels[i+1] - gMeanTar) * (gStdRef / gStdTar) + gMeanRef;
+          let b = (originalPixels[i+2] - bMeanTar) * (bStdRef / bStdTar) + bMeanRef;
+
+          matchedPixels[i]   = Math.min(255, Math.max(0, r));
+          matchedPixels[i+1] = Math.min(255, Math.max(0, g));
+          matchedPixels[i+2] = Math.min(255, Math.max(0, b));
+          matchedPixels[i+3] = originalPixels[i+3]; // Alpha
+        }
+
+        // Bật thanh trượt điều chỉnh pha màu
+        controlBox.style.opacity = "1";
+        controlBox.style.pointerEvents = "auto";
+        sliderBlend.value = 100;
+        sliderSat.value = 100;
+
+        renderFinalImage();
+        statusLog.innerText = "✨ Khớp màu thành công! Kéo thanh trượt bên dưới để chỉnh tỉ lệ pha màu.";
+      }, 50);
+    });
+
+    // 4. Thuật toán Hòa Trộn (Blend) theo tỷ lệ % giữa Ảnh Gốc & Ảnh Khớp Màu
+    function renderFinalImage() {
+      if (!originalPixels || !matchedPixels) return;
+
+      const blendRatio = parseFloat(sliderBlend.value) / 100;
+      const satScale = parseFloat(sliderSat.value) / 100;
+
+      valBlend.innerText = sliderBlend.value + '%';
+      valSat.innerText = sliderSat.value + '%';
+
+      const imgData = ctx.createImageData(imageCanvas.width, imageCanvas.height);
+      const output = imgData.data;
+
+      for (let i = 0; i < originalPixels.length; i += 4) {
+        // Linear Interpolation (Lerp) giữa pixel gốc và pixel matched
+        let r = originalPixels[i]   * (1 - blendRatio) + matchedPixels[i]   * blendRatio;
+        let g = originalPixels[i+1] * (1 - blendRatio) + matchedPixels[i+1] * blendRatio;
+        let b = originalPixels[i+2] * (1 - blendRatio) + matchedPixels[i+2] * blendRatio;
+
+        // Tùy chỉnh bão hòa (Saturation)
+        if (satScale !== 1) {
+          const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+          r = gray + (r - gray) * satScale;
+          g = gray + (g - gray) * satScale;
+          b = gray + (b - gray) * satScale;
+        }
+
+        output[i]   = Math.min(255, Math.max(0, r));
+        output[i+1] = Math.min(255, Math.max(0, g));
+        output[i+2] = Math.min(255, Math.max(0, b));
+        output[i+3] = originalPixels[i+3];
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    sliderBlend.addEventListener('input', renderFinalImage);
+    sliderSat.addEventListener('input', renderFinalImage);
+
+    // 5. Nút Giữ để so sánh với Ảnh Gốc
+    const btnCompare = document.getElementById('btnCompare');
+    function showOriginal() {
+      if (!originalPixels) return;
+      const imgData = ctx.createImageData(imageCanvas.width, imageCanvas.height);
+      imgData.data.set(originalPixels);
+      ctx.putImageData(imgData, 0, 0);
+    }
+    btnCompare.addEventListener('mousedown', showOriginal);
+    btnCompare.addEventListener('mouseup', renderFinalImage);
+    btnCompare.addEventListener('touchstart', (e) => { e.preventDefault(); showOriginal(); });
+    btnCompare.addEventListener('touchend', (e) => { e.preventDefault(); renderFinalImage(); });
+
+    // 6. Tải ảnh hoàn thiện
+    document.getElementById('btnDownload').addEventListener('click', () => {
+      if (!isTargetLoaded) { alert("Chưa có ảnh nào để tải!"); return; }
+      const link = document.createElement('a');
+      link.download = `colorby_mix_${sliderBlend.value}pct.jpg`;
+      link.href = imageCanvas.toDataURL('image/jpeg', 0.95);
+      link.click();
+      statusLog.innerText = "📥 Đã lưu ảnh thành công vào thiết bị!";
+    });
+  </script>
+</body>
+</html>
