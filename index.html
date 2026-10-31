@@ -1,442 +1,678 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" class="h-full bg-slate-950 text-slate-100">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Colorby Pro - Custom Color Match Intensity</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Colorby Web - Match & Clone Màu Ảnh</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
   <style>
-    :root {
-      --bg: #0a0a0c;
-      --card-bg: #16161a;
-      --border: #27272a;
-      --accent: #3b82f6;
-      --accent-hover: #2563eb;
-      --text: #f4f4f5;
-      --text-sub: #a1a1aa;
-      --green: #10b981;
+    /* Mobile scrollbar & touch protection */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.5); border-radius: 999px; }
+    
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .glass-btn {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .glass-btn:active {
+      transform: scale(0.96);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 12px;
+    /* Range Slider Styling */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: transparent;
     }
-
-    .app-container {
+    input[type=range]::-webkit-slider-track {
       width: 100%;
-      max-width: 500px;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-    }
-
-    .header { text-align: center; }
-    .header h1 { font-size: 18px; font-weight: 700; color: #fff; }
-    .header p { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
-
-    /* Workspace Canvas */
-    .workspace {
-      position: relative;
-      width: 100%;
-      height: 300px;
-      background: #000;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .workspace canvas {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-    }
-    .placeholder-text {
-      position: absolute;
-      color: var(--text-sub);
-      font-size: 13px;
-      text-align: center;
-      padding: 20px;
-    }
-
-    /* Ref Preview */
-    .ref-preview-container {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: #111;
-      padding: 8px 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      font-size: 12px;
-    }
-    #refThumb {
-      width: 36px;
-      height: 36px;
-      border-radius: 4px;
-      object-fit: cover;
-      background: #333;
-      display: none;
-    }
-
-    .upload-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-    .upload-btn-box {
-      background: #1f1f23;
-      border: 1px dashed var(--border);
-      border-radius: 10px;
-      padding: 10px;
-      text-align: center;
+      height: 6px;
       cursor: pointer;
-      font-size: 12px;
-      color: var(--text-sub);
-      transition: 0.2s;
+      background: #334155;
+      border-radius: 999px;
     }
-    .upload-btn-box:hover { border-color: var(--accent); color: #fff; }
-    .upload-btn-box input { display: none; }
-
-    /* Sliders */
-    .control-box {
-      background: #111115;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .slider-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .slider-label {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      color: var(--text-sub);
-    }
-    .slider-label span.val { color: var(--accent); font-weight: bold; }
-
-    input[type="range"] {
-      width: 100%;
-      accent-color: var(--accent);
+    input[type=range]::-webkit-slider-thumb {
+      height: 20px;
+      width: 20px;
+      border-radius: 50%;
+      background: #6366f1;
       cursor: pointer;
+      -webkit-appearance: none;
+      margin-top: -7px;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
+      border: 2px solid #ffffff;
     }
 
-    .btn-main {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 12px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      text-align: center;
-      transition: 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-    .btn-main:hover { background: var(--accent-hover); }
-    .btn-green { background: var(--green); }
-    .btn-green:hover { background: #059669; }
-    .btn-sec { background: #202327; color: #fff; border: 1px solid var(--border); }
-    .btn-sec:hover { background: #2c3036; }
-
-    .btn-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    #statusLog {
-      font-size: 11px;
-      color: var(--text-sub);
-      text-align: center;
-      min-height: 16px;
+    /* Text Wrap Safety Guard */
+    .word-break-safe {
+      overflow-wrap: break-word;
+      word-break: break-word;
+      hyphens: auto;
     }
   </style>
 </head>
-<body>
+<body class="h-full flex flex-col font-sans select-none bg-slate-950 text-slate-100 overflow-hidden">
 
-  <div class="app-container">
-    <div class="header">
-      <h1>Colorby Pro - Mix Ratio Matcher</h1>
-      <p>Tùy chỉnh tỷ lệ pha màu linh hoạt từ ảnh mẫu</p>
-    </div>
-
-    <!-- Màn hình Canvas -->
-    <div class="workspace" id="workspace">
-      <div class="placeholder-text" id="placeholderText">📸 Tải ảnh của bạn & Chọn ảnh mẫu màu bên dưới</div>
-      <canvas id="imageCanvas" style="display: none;"></canvas>
-    </div>
-
-    <div id="statusLog">Sẵn sàng</div>
-
-    <!-- Chọn ảnh -->
-    <div class="upload-grid">
-      <label class="upload-btn-box">
-        📂 Chọn Ảnh Của Bạn
-        <input type="file" id="uploadTarget" accept="image/*" />
-      </label>
-      <label class="upload-btn-box" style="border-style: solid; border-color: #3b82f6;">
-        🎨 Chọn Ảnh Mẫu (Ref)
-        <input type="file" id="uploadRef" accept="image/*" />
-      </label>
-    </div>
-
-    <!-- Thông tin ảnh mẫu -->
-    <div class="ref-preview-container">
-      <img id="refThumb" />
-      <span id="refStatusText" style="color: var(--text-sub);">Chưa chọn ảnh mẫu màu.</span>
-    </div>
-
-    <!-- Nút thực hiện Color Match -->
-    <button class="btn-main" id="btnColorMatch">✨ Khớp Màu Theo Ảnh Mẫu (True Color Match)</button>
-
-    <!-- BỘ ĐIỀU CHỈNH TỶ LỆ PHA MÀU (BLEND CONTROLS) -->
-    <div class="control-box" id="controlBox" style="opacity: 0.6; pointer-events: none;">
-      <div class="slider-group">
-        <div class="slider-label">
-          <span>🎚️ Mức độ áp dụng màu mẫu (Mix Ratio)</span>
-          <span class="val" id="valBlend">100%</span>
-        </div>
-        <input type="range" id="sliderBlend" min="0" max="100" value="100">
+  <!-- ==================== HEADER NAVIGATION ==================== -->
+  <header class="h-16 px-3 sm:px-4 glass-panel flex items-center justify-between z-30 shrink-0 border-b border-slate-800/80">
+    <div class="flex items-center gap-2 min-w-0 pr-2">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 shrink-0">
+        <i data-lucide="palette" class="w-5 h-5 text-white"></i>
       </div>
-
-      <div class="slider-group">
-        <div class="slider-label">
-          <span>🎨 Độ bão hòa màu (Saturation)</span>
-          <span class="val" id="valSat">100%</span>
-        </div>
-        <input type="range" id="sliderSat" min="0" max="200" value="100">
+      <div class="min-w-0">
+        <h1 class="font-extrabold text-sm sm:text-base tracking-tight bg-gradient-to-r from-white via-slate-100 to-indigo-300 bg-clip-text text-transparent truncate">
+          Colorby Web
+        </h1>
+        <p class="text-[10px] text-slate-400 font-medium truncate word-break-safe">Clone Màu Ảnh iOS</p>
       </div>
     </div>
 
-    <div class="btn-row">
-      <button class="btn-main btn-sec" id="btnCompare">👁️ Giữ để xem Ảnh Gốc</button>
-      <button class="btn-main btn-green" id="btnDownload">📥 Tải Ảnh Đã Pha Màu</button>
+    <!-- Navigation Tabs -->
+    <nav class="flex bg-slate-900/90 p-1 rounded-xl border border-slate-800 shrink-0">
+      <button id="nav-extract" onclick="switchTab('extract')" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all bg-indigo-600 text-white shadow-md">
+        <i data-lucide="pipette" class="w-3.5 h-3.5 shrink-0"></i>
+        <span class="whitespace-nowrap">1. Mẫu</span>
+      </button>
+      <button id="nav-apply" onclick="switchTab('apply')" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold text-slate-400 hover:text-white transition-all">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 shrink-0"></i>
+        <span class="whitespace-nowrap">2. Lọc Màu</span>
+      </button>
+      <button id="nav-presets" onclick="switchTab('presets')" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold text-slate-400 hover:text-white transition-all">
+        <i data-lucide="bookmark" class="w-3.5 h-3.5 shrink-0"></i>
+        <span class="whitespace-nowrap">Kho Preset</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- ==================== MAIN VIEWPORT ==================== -->
+  <main class="flex-1 relative overflow-hidden bg-slate-950">
+
+    <!-- TAB 1: TRÍCH XUẤT MÀU TỪ ẢNH MẪU -->
+    <section id="tab-extract" class="absolute inset-0 flex flex-col z-10">
+      <div class="flex-1 relative bg-slate-950 flex items-center justify-center p-3 overflow-hidden">
+        
+        <!-- Placeholder Upload -->
+        <div id="ref-placeholder" class="flex flex-col items-center justify-center text-center p-5 border-2 border-dashed border-slate-800 rounded-3xl max-w-xs w-full bg-slate-900/40">
+          <div class="w-14 h-14 rounded-2xl bg-indigo-950/70 text-indigo-400 flex items-center justify-center mb-3 border border-indigo-800/40 shadow-inner">
+            <i data-lucide="image-plus" class="w-7 h-7"></i>
+          </div>
+          <h2 class="text-sm font-bold text-slate-100 mb-1 word-break-safe">Chọn Ảnh Mẫu Đẹp</h2>
+          <p class="text-[11px] text-slate-400 mb-4 leading-relaxed word-break-safe">Tải lên bức ảnh có màu sắc/bộ lọc bạn muốn clone lại.</p>
+          <label class="glass-btn hover:bg-slate-800 text-indigo-300 font-bold text-xs px-5 py-3 rounded-2xl cursor-pointer flex items-center justify-center gap-2 w-full shadow-lg border-indigo-500/30 active:scale-95 transition-transform">
+            <i data-lucide="upload" class="w-4 h-4"></i>
+            <span>Tải Ảnh Mẫu Lên</span>
+            <input type="file" id="ref-file-input" accept="image/*" class="hidden" onchange="handleRefUpload(event)" />
+          </label>
+        </div>
+
+        <!-- Canvas Display -->
+        <div id="ref-viewport" class="hidden relative w-full h-full flex items-center justify-center">
+          <canvas id="ref-canvas" class="max-w-full max-h-full rounded-2xl shadow-2xl object-contain"></canvas>
+          
+          <label class="absolute top-3 right-3 glass-btn p-2.5 rounded-xl text-xs text-slate-200 hover:text-white cursor-pointer shadow-lg active:scale-95">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            <input type="file" accept="image/*" class="hidden" onchange="handleRefUpload(event)" />
+          </label>
+        </div>
+      </div>
+
+      <!-- Bottom Panel Extracted Params -->
+      <div class="glass-panel border-t border-slate-800/90 flex flex-col p-3 sm:p-4 shrink-0 space-y-2.5">
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <h3 class="text-xs font-extrabold text-slate-200 uppercase tracking-wider flex items-center gap-1.5 truncate">
+              <i data-lucide="sliders" class="w-3.5 h-3.5 text-indigo-400 shrink-0"></i>
+              <span class="truncate">Thông Số Màu Trích Xuất</span>
+            </h3>
+          </div>
+          <button id="btn-save-extracted" disabled onclick="openSaveModal()" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 disabled:bg-slate-800/80 disabled:text-slate-600 text-white flex items-center gap-1.5 shadow-md shrink-0 transition-all active:scale-95">
+            <i data-lucide="bookmark-plus" class="w-3.5 h-3.5"></i>
+            <span>Lưu Preset</span>
+          </button>
+        </div>
+
+        <!-- Palette Swatches -->
+        <div>
+          <p class="text-[10px] text-slate-400 font-semibold mb-1">5 Màu Chủ Đạo (Dominant Colors):</p>
+          <div id="palette-swatches" class="flex gap-1.5 h-8">
+            <div class="flex-1 rounded-lg bg-slate-800/60 animate-pulse"></div>
+            <div class="flex-1 rounded-lg bg-slate-800/60 animate-pulse"></div>
+            <div class="flex-1 rounded-lg bg-slate-800/60 animate-pulse"></div>
+            <div class="flex-1 rounded-lg bg-slate-800/60 animate-pulse"></div>
+            <div class="flex-1 rounded-lg bg-slate-800/60 animate-pulse"></div>
+          </div>
+        </div>
+
+        <!-- Color Params Grid -->
+        <div class="grid grid-cols-4 gap-1.5 text-center text-[10px]">
+          <div class="bg-slate-900/90 p-1.5 rounded-xl border border-slate-800/80">
+            <span class="block text-slate-400 font-medium leading-tight">Độ Sáng</span>
+            <span id="param-brightness" class="font-bold text-indigo-300">100%</span>
+          </div>
+          <div class="bg-slate-900/90 p-1.5 rounded-xl border border-slate-800/80">
+            <span class="block text-slate-400 font-medium leading-tight">Tương Phản</span>
+            <span id="param-contrast" class="font-bold text-indigo-300">100%</span>
+          </div>
+          <div class="bg-slate-900/90 p-1.5 rounded-xl border border-slate-800/80">
+            <span class="block text-slate-400 font-medium leading-tight">Bão Hòa</span>
+            <span id="param-saturation" class="font-bold text-indigo-300">100%</span>
+          </div>
+          <div class="bg-slate-900/90 p-1.5 rounded-xl border border-slate-800/80">
+            <span class="block text-slate-400 font-medium leading-tight">Nhiệt Màu</span>
+            <span id="param-temp" class="font-bold text-indigo-300">0</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: ÁP DỤNG MÀU LÊN ẢNH ĐÍCH -->
+    <section id="tab-apply" class="absolute inset-0 flex flex-col hidden z-10">
+      <!-- Target Viewport -->
+      <div class="flex-1 relative bg-slate-950 flex items-center justify-center p-3 overflow-hidden">
+        
+        <!-- Upload Target Image Placeholder -->
+        <div id="target-placeholder" class="flex flex-col items-center justify-center text-center p-5 border-2 border-dashed border-slate-800 rounded-3xl max-w-xs w-full bg-slate-900/40">
+          <div class="w-14 h-14 rounded-2xl bg-indigo-950/70 text-indigo-400 flex items-center justify-center mb-3 border border-indigo-800/40 shadow-inner">
+            <i data-lucide="image" class="w-7 h-7"></i>
+          </div>
+          <h2 class="text-sm font-bold text-slate-100 mb-1 word-break-safe">Chọn Ảnh Cần Lọc Màu</h2>
+          <p class="text-[11px] text-slate-400 mb-4 leading-relaxed word-break-safe">Bức ảnh của bạn sẽ được biến đổi màu giống hệt ảnh mẫu.</p>
+          <label class="glass-btn hover:bg-slate-800 text-indigo-300 font-bold text-xs px-5 py-3 rounded-2xl cursor-pointer flex items-center justify-center gap-2 w-full shadow-lg border-indigo-500/30 active:scale-95 transition-transform">
+            <i data-lucide="upload" class="w-4 h-4"></i>
+            <span>Tải Ảnh Cần Lọc Lên</span>
+            <input type="file" id="target-file-input" accept="image/*" class="hidden" onchange="handleTargetUpload(event)" />
+          </label>
+        </div>
+
+        <!-- Render Target Canvas -->
+        <div id="target-viewport" class="hidden relative w-full h-full flex items-center justify-center">
+          <canvas id="target-canvas" class="max-w-full max-h-full rounded-2xl shadow-2xl object-contain"></canvas>
+
+          <!-- Floating Actions Header -->
+          <div class="absolute top-3 inset-x-3 flex items-center justify-between pointer-events-none">
+            <label class="glass-btn p-2.5 rounded-xl text-xs text-slate-200 hover:text-white cursor-pointer shadow-lg pointer-events-auto active:scale-95">
+              <i data-lucide="image" class="w-4 h-4"></i>
+              <input type="file" accept="image/*" class="hidden" onchange="handleTargetUpload(event)" />
+            </label>
+
+            <div class="glass-panel px-3 py-1 rounded-full text-[10px] font-bold text-indigo-300 pointer-events-auto shadow-lg truncate max-w-[150px]">
+              <span id="active-preset-label" class="truncate">Preset: Gốc</span>
+            </div>
+
+            <!-- Hold Before/After Button -->
+            <button id="btn-compare" class="glass-btn p-2.5 rounded-xl text-xs text-slate-200 hover:text-white shadow-lg pointer-events-auto active:scale-95">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Save Filtered Image Floating Button -->
+          <button onclick="downloadFilteredImage()" class="absolute bottom-3 right-3 glass-btn px-4 py-2.5 rounded-2xl text-xs font-bold text-white bg-indigo-600/90 hover:bg-indigo-600 shadow-2xl flex items-center gap-1.5 active:scale-95 transition-all">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>Lưu Ảnh</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Bottom Controls Panel -->
+      <div class="glass-panel border-t border-slate-800/90 flex flex-col p-3 shrink-0 space-y-2">
+        <!-- Intensity Slider -->
+        <div class="px-1">
+          <div class="flex justify-between items-center text-[11px] font-semibold text-slate-300 mb-1">
+            <span>Cường Độ Lọc (Intensity):</span>
+            <span id="intensity-val" class="font-bold text-indigo-300">100%</span>
+          </div>
+          <input type="range" id="intensity-slider" min="0" max="100" value="100" oninput="onIntensityChange()" class="w-full" />
+        </div>
+
+        <!-- Presets Selection Bar -->
+        <div class="pt-1">
+          <p class="text-[10px] text-slate-400 font-semibold mb-1.5">Chọn Bộ Lọc Áp Dụng:</p>
+          <div class="flex gap-2 overflow-x-auto pb-1 items-center" id="apply-presets-strip">
+            <!-- Preset Items Dynamic -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: QUẢN LÝ KHO PRESET -->
+    <section id="tab-presets" class="absolute inset-0 flex flex-col hidden p-4 overflow-y-auto z-10 bg-slate-950">
+      <div class="flex items-center justify-between mb-4 gap-2">
+        <div>
+          <h2 class="text-sm font-bold text-slate-100 word-break-safe">Bộ Sưu Tập Preset</h2>
+          <p class="text-[11px] text-slate-400 word-break-safe">Các bộ lọc màu đã được bạn trích xuất & lưu lại</p>
+        </div>
+        <button onclick="switchTab('extract')" class="glass-btn px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-300 flex items-center gap-1 shrink-0 active:scale-95">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>Tạo Mới</span>
+        </button>
+      </div>
+
+      <!-- Presets Grid -->
+      <div id="presets-grid" class="grid grid-cols-2 gap-2.5 pb-20">
+        <!-- Rendered via JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- SAVE PRESET MODAL -->
+  <div id="save-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-panel w-full max-w-xs rounded-3xl p-4 border border-slate-800 shadow-2xl space-y-4">
+      <div class="flex items-center gap-2">
+        <i data-lucide="bookmark-plus" class="w-5 h-5 text-indigo-400 shrink-0"></i>
+        <h3 class="text-sm font-bold text-slate-100 word-break-safe">Lưu Preset Bộ Lọc</h3>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-medium text-slate-300 mb-1">Tên Preset Tùy Chỉnh</label>
+        <input type="text" id="preset-name-input" placeholder="VD: Sunset Vintage, Tone Hàn Quốc..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-medium text-slate-300 mb-1">Xem trước màu:</label>
+        <div id="modal-palette-preview" class="flex h-7 rounded-lg overflow-hidden border border-slate-700"></div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeSaveModal()" class="flex-1 py-2 rounded-xl text-xs font-semibold glass-btn text-slate-300">Hủy</button>
+        <button onclick="confirmSavePreset()" class="flex-1 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-600/30">Lưu Ngay</button>
+      </div>
     </div>
   </div>
 
+  <!-- SCRIPT ENGINE -->
   <script>
-    const uploadTarget = document.getElementById('uploadTarget');
-    const uploadRef = document.getElementById('uploadRef');
-    const imageCanvas = document.getElementById('imageCanvas');
-    const ctx = imageCanvas.getContext('2d', { willReadFrequently: true });
-    const placeholderText = document.getElementById('placeholderText');
-    const statusLog = document.getElementById('statusLog');
-    const refThumb = document.getElementById('refThumb');
-    const refStatusText = document.getElementById('refStatusText');
-    const controlBox = document.getElementById('controlBox');
-    const sliderBlend = document.getElementById('sliderBlend');
-    const sliderSat = document.getElementById('sliderSat');
-    const valBlend = document.getElementById('valBlend');
-    const valSat = document.getElementById('valSat');
+    lucide.createIcons();
 
-    let targetImg = new Image();
-    let refImg = new Image();
-    let isTargetLoaded = false;
-    let isRefLoaded = false;
+    // Global Application State
+    const state = {
+      refImage: null,
+      extractedProfile: null,
+      targetImage: null,
+      activePreset: null,
+      filterIntensity: 100,
+      presets: []
+    };
 
-    // Bộ lưu trữ dữ liệu Pixel
-    let originalPixels = null;  // Dữ liệu pixel gốc của ảnh target
-    let matchedPixels = null;   // Dữ liệu pixel đã biến đổi 100% theo ảnh mẫu
+    // --- Tab Navigation ---
+    function switchTab(tabId) {
+      ['extract', 'apply', 'presets'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        const navBtn = document.getElementById(`nav-${t}`);
+        navBtn.className = "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold text-slate-400 hover:text-white transition-all";
+      });
 
-    // 1. Tải ảnh mục tiêu
-    uploadTarget.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const url = URL.createObjectURL(file);
-        targetImg.onload = () => {
-          imageCanvas.width = targetImg.naturalWidth;
-          imageCanvas.height = targetImg.naturalHeight;
-          ctx.drawImage(targetImg, 0, 0);
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`nav-${tabId}`);
+      activeBtn.className = "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all bg-indigo-600 text-white shadow-md";
 
-          const imgData = ctx.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
-          originalPixels = new Uint8ClampedArray(imgData.data);
-          matchedPixels = null;
-
-          imageCanvas.style.display = 'block';
-          placeholderText.style.display = 'none';
-          isTargetLoaded = true;
-          statusLog.innerText = "✅ Đã tải ảnh gốc thành công!";
-        };
-        targetImg.src = url;
+      if (tabId === 'presets') {
+        renderPresetsGrid();
+      } else if (tabId === 'apply') {
+        renderApplyPresetsStrip();
       }
-    });
-
-    // 2. Tải ảnh mẫu (Reference)
-    uploadRef.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const url = URL.createObjectURL(file);
-        refImg.onload = () => {
-          refThumb.src = url;
-          refThumb.style.display = 'block';
-          refStatusText.innerText = "Đã nạp ảnh mẫu: " + file.name;
-          isRefLoaded = true;
-          statusLog.innerText = "🎨 Đã nhận diện ảnh mẫu màu sắc!";
-        };
-        refImg.src = url;
-      }
-    });
-
-    // 3. Thuật toán phân tích ma trận màu & Tạo bản màu khớp 100%
-    document.getElementById('btnColorMatch').addEventListener('click', () => {
-      if (!isTargetLoaded) { alert("Vui lòng chọn ảnh của bạn trước!"); return; }
-      if (!isRefLoaded) { alert("Vui lòng chọn ảnh mẫu (Reference Photo)!"); return; }
-
-      statusLog.innerText = "⏳ Đang tính toán ma trận màu mẫu...";
-
-      setTimeout(() => {
-        // Đọc pixel ảnh mẫu
-        const refCanvas = document.createElement('canvas');
-        const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
-        refCanvas.width = refImg.naturalWidth;
-        refCanvas.height = refImg.naturalHeight;
-        refCtx.drawImage(refImg, 0, 0);
-        const refPixels = refCtx.getImageData(0, 0, refCanvas.width, refCanvas.height).data;
-
-        // Tính Mean & StdDev ảnh mẫu
-        let rSum = 0, gSum = 0, bSum = 0;
-        const totalRef = refPixels.length / 4;
-        for (let i = 0; i < refPixels.length; i += 4) {
-          rSum += refPixels[i]; gSum += refPixels[i+1]; bSum += refPixels[i+2];
-        }
-        const rMeanRef = rSum / totalRef, gMeanRef = gSum / totalRef, bMeanRef = bSum / totalRef;
-
-        let rVar = 0, gVar = 0, bVar = 0;
-        for (let i = 0; i < refPixels.length; i += 4) {
-          rVar += Math.pow(refPixels[i] - rMeanRef, 2);
-          gVar += Math.pow(refPixels[i+1] - gMeanRef, 2);
-          bVar += Math.pow(refPixels[i+2] - bMeanRef, 2);
-        }
-        const rStdRef = Math.sqrt(rVar / totalRef) || 1;
-        const gStdRef = Math.sqrt(gVar / totalRef) || 1;
-        const bStdRef = Math.sqrt(bVar / totalRef) || 1;
-
-        // Tính Mean & StdDev ảnh gốc
-        let trSum = 0, tgSum = 0, tbSum = 0;
-        const totalTarget = originalPixels.length / 4;
-        for (let i = 0; i < originalPixels.length; i += 4) {
-          trSum += originalPixels[i]; tgSum += originalPixels[i+1]; tbSum += originalPixels[i+2];
-        }
-        const rMeanTar = trSum / totalTarget, gMeanTar = tgSum / totalTarget, bMeanTar = tbSum / totalTarget;
-
-        let trVar = 0, tgVar = 0, tbVar = 0;
-        for (let i = 0; i < originalPixels.length; i += 4) {
-          trVar += Math.pow(originalPixels[i] - rMeanTar, 2);
-          tgVar += Math.pow(originalPixels[i+1] - gMeanTar, 2);
-          tbVar += Math.pow(originalPixels[i+2] - bMeanTar, 2);
-        }
-        const rStdTar = Math.sqrt(trVar / totalTarget) || 1;
-        const gStdTar = Math.sqrt(tgVar / totalTarget) || 1;
-        const bStdTar = Math.sqrt(tbVar / totalTarget) || 1;
-
-        // Tạo mảng pixel khớp 100%
-        matchedPixels = new Uint8ClampedArray(originalPixels.length);
-        for (let i = 0; i < originalPixels.length; i += 4) {
-          let r = (originalPixels[i] - rMeanTar) * (rStdRef / rStdTar) + rMeanRef;
-          let g = (originalPixels[i+1] - gMeanTar) * (gStdRef / gStdTar) + gMeanRef;
-          let b = (originalPixels[i+2] - bMeanTar) * (bStdRef / bStdTar) + bMeanRef;
-
-          matchedPixels[i]   = Math.min(255, Math.max(0, r));
-          matchedPixels[i+1] = Math.min(255, Math.max(0, g));
-          matchedPixels[i+2] = Math.min(255, Math.max(0, b));
-          matchedPixels[i+3] = originalPixels[i+3]; // Alpha
-        }
-
-        // Bật thanh trượt điều chỉnh pha màu
-        controlBox.style.opacity = "1";
-        controlBox.style.pointerEvents = "auto";
-        sliderBlend.value = 100;
-        sliderSat.value = 100;
-
-        renderFinalImage();
-        statusLog.innerText = "✨ Khớp màu thành công! Kéo thanh trượt bên dưới để chỉnh tỉ lệ pha màu.";
-      }, 50);
-    });
-
-    // 4. Thuật toán Hòa Trộn (Blend) theo tỷ lệ % giữa Ảnh Gốc & Ảnh Khớp Màu
-    function renderFinalImage() {
-      if (!originalPixels || !matchedPixels) return;
-
-      const blendRatio = parseFloat(sliderBlend.value) / 100;
-      const satScale = parseFloat(sliderSat.value) / 100;
-
-      valBlend.innerText = sliderBlend.value + '%';
-      valSat.innerText = sliderSat.value + '%';
-
-      const imgData = ctx.createImageData(imageCanvas.width, imageCanvas.height);
-      const output = imgData.data;
-
-      for (let i = 0; i < originalPixels.length; i += 4) {
-        // Linear Interpolation (Lerp) giữa pixel gốc và pixel matched
-        let r = originalPixels[i]   * (1 - blendRatio) + matchedPixels[i]   * blendRatio;
-        let g = originalPixels[i+1] * (1 - blendRatio) + matchedPixels[i+1] * blendRatio;
-        let b = originalPixels[i+2] * (1 - blendRatio) + matchedPixels[i+2] * blendRatio;
-
-        // Tùy chỉnh bão hòa (Saturation)
-        if (satScale !== 1) {
-          const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-          r = gray + (r - gray) * satScale;
-          g = gray + (g - gray) * satScale;
-          b = gray + (b - gray) * satScale;
-        }
-
-        output[i]   = Math.min(255, Math.max(0, r));
-        output[i+1] = Math.min(255, Math.max(0, g));
-        output[i+2] = Math.min(255, Math.max(0, b));
-        output[i+3] = originalPixels[i+3];
-      }
-
-      ctx.putImageData(imgData, 0, 0);
     }
 
-    sliderBlend.addEventListener('input', renderFinalImage);
-    sliderSat.addEventListener('input', renderFinalImage);
+    // --- Tab 1: Extract Palette from Reference Image ---
+    function handleRefUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
 
-    // 5. Nút Giữ để so sánh với Ảnh Gốc
-    const btnCompare = document.getElementById('btnCompare');
-    function showOriginal() {
-      if (!originalPixels) return;
-      const imgData = ctx.createImageData(imageCanvas.width, imageCanvas.height);
-      imgData.data.set(originalPixels);
-      ctx.putImageData(imgData, 0, 0);
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          state.refImage = img;
+          processRefImage(img);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
     }
-    btnCompare.addEventListener('mousedown', showOriginal);
-    btnCompare.addEventListener('mouseup', renderFinalImage);
-    btnCompare.addEventListener('touchstart', (e) => { e.preventDefault(); showOriginal(); });
-    btnCompare.addEventListener('touchend', (e) => { e.preventDefault(); renderFinalImage(); });
 
-    // 6. Tải ảnh hoàn thiện
-    document.getElementById('btnDownload').addEventListener('click', () => {
-      if (!isTargetLoaded) { alert("Chưa có ảnh nào để tải!"); return; }
-      const link = document.createElement('a');
-      link.download = `colorby_mix_${sliderBlend.value}pct.jpg`;
-      link.href = imageCanvas.toDataURL('image/jpeg', 0.95);
-      link.click();
-      statusLog.innerText = "📥 Đã lưu ảnh thành công vào thiết bị!";
-    });
+    function processRefImage(img) {
+      const canvas = document.getElementById('ref-canvas');
+      const ctx = canvas.getContext('2d');
+
+      const maxDim = 800;
+      let width = img.width;
+      let height = img.height;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+
+      document.getElementById('ref-placeholder').classList.add('hidden');
+      document.getElementById('ref-viewport').classList.remove('hidden');
+
+      // Analyze Pixels
+      const imageData = ctx.getImageData(0, 0, width, height);
+      const data = imageData.data;
+
+      let totalR = 0, totalG = 0, totalB = 0;
+      let minL = 255, maxL = 0;
+      const colorBins = {};
+
+      for (let i = 0; i < data.length; i += 16) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+
+        totalR += r; totalG += g; totalB += b;
+
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+        if (lum < minL) minL = lum;
+        if (lum > maxL) maxL = lum;
+
+        const qr = Math.round(r / 32) * 32;
+        const qg = Math.round(g / 32) * 32;
+        const qb = Math.round(b / 32) * 32;
+        const key = `${qr},${qg},${qb}`;
+        colorBins[key] = (colorBins[key] || 0) + 1;
+      }
+
+      const count = data.length / 16;
+      const avgR = totalR / count;
+      const avgG = totalG / count;
+      const avgB = totalB / count;
+
+      const brightness = Math.round(((avgR + avgG + avgB) / 3 / 128) * 100);
+      const contrast = Math.round(((maxL - minL) / 255) * 120 + 40);
+      const temp = Math.round(((avgR - avgB) / 255) * 50);
+
+      const maxRGB = Math.max(avgR, avgG, avgB);
+      const minRGB = Math.min(avgR, avgG, avgB);
+      const saturation = Math.round((maxRGB === 0 ? 0 : (maxRGB - minRGB) / maxRGB) * 140 + 60);
+
+      const sortedPalette = Object.keys(colorBins)
+        .sort((a, b) => colorBins[b] - colorBins[a])
+        .slice(0, 5)
+        .map(k => {
+          const [r, g, b] = k.split(',').map(Number);
+          return rgbToHex(r, g, b);
+        });
+
+      state.extractedProfile = {
+        brightness: Math.max(70, Math.min(130, brightness)),
+        contrast: Math.max(70, Math.min(140, contrast)),
+        saturation: Math.max(60, Math.min(160, saturation)),
+        temp: Math.max(-40, Math.min(40, temp)),
+        palette: sortedPalette
+      };
+
+      // Render UI
+      document.getElementById('param-brightness').innerText = `${state.extractedProfile.brightness}%`;
+      document.getElementById('param-contrast').innerText = `${state.extractedProfile.contrast}%`;
+      document.getElementById('param-saturation').innerText = `${state.extractedProfile.saturation}%`;
+      document.getElementById('param-temp').innerText = state.extractedProfile.temp > 0 ? `+${state.extractedProfile.temp}` : state.extractedProfile.temp;
+
+      document.getElementById('palette-swatches').innerHTML = state.extractedProfile.palette.map(hex => `
+        <div class="flex-1 rounded-lg shadow-inner border border-white/10 flex items-end p-0.5" style="background-color: ${hex}">
+          <span class="text-[7px] font-mono text-white/90 bg-black/50 px-1 rounded truncate w-full text-center">${hex}</span>
+        </div>
+      `).join('');
+
+      document.getElementById('btn-save-extracted').disabled = false;
+    }
+
+    function rgbToHex(r, g, b) {
+      return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+
+    // --- Tab 2: Apply Filter to Target Image ---
+    function handleTargetUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          state.targetImage = img;
+          document.getElementById('target-placeholder').classList.add('hidden');
+          document.getElementById('target-viewport').classList.remove('hidden');
+
+          // Default auto apply extracted profile if available
+          if (state.extractedProfile && !state.activePreset) {
+            state.activePreset = { name: "Mới Trích Xuất", profile: state.extractedProfile };
+          }
+          renderTargetCanvas();
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function onIntensityChange() {
+      state.filterIntensity = parseInt(document.getElementById('intensity-slider').value);
+      document.getElementById('intensity-val').innerText = `${state.filterIntensity}%`;
+      renderTargetCanvas();
+    }
+
+    function renderTargetCanvas() {
+      const canvas = document.getElementById('target-canvas');
+      const ctx = canvas.getContext('2d');
+      if (!state.targetImage) return;
+
+      canvas.width = state.targetImage.width;
+      canvas.height = state.targetImage.height;
+
+      ctx.save();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (state.activePreset && state.filterIntensity > 0) {
+        const p = state.activePreset.profile;
+        const factor = state.filterIntensity / 100;
+
+        const b = 100 + (p.brightness - 100) * factor;
+        const c = 100 + (p.contrast - 100) * factor;
+        const s = 100 + (p.saturation - 100) * factor;
+        const sepia = p.temp > 0 ? (p.temp * 0.4 * factor) : 0;
+        const hue = p.temp < 0 ? (p.temp * 0.5 * factor) : 0;
+
+        ctx.filter = `brightness(${b}%) contrast(${c}%) saturate(${s}%) sepia(${sepia}%) hue-rotate(${hue}deg)`;
+      } else {
+        ctx.filter = 'none';
+      }
+
+      ctx.drawImage(state.targetImage, 0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
+
+    // Hold Compare Before/After
+    const btnCompare = document.getElementById('btn-compare');
+    btnCompare.onpointerdown = () => {
+      const canvas = document.getElementById('target-canvas');
+      const ctx = canvas.getContext('2d');
+      if (!state.targetImage) return;
+      ctx.filter = 'none';
+      ctx.drawImage(state.targetImage, 0, 0, canvas.width, canvas.height);
+    };
+    btnCompare.onpointerup = btnCompare.onpointerleave = () => {
+      renderTargetCanvas();
+    };
+
+    function downloadFilteredImage() {
+      const canvas = document.getElementById('target-canvas');
+      if (!canvas || canvas.width === 0) return;
+
+      const a = document.createElement('a');
+      a.download = `Colorby_Filtered_${Date.now()}.jpg`;
+      a.href = canvas.toDataURL('image/jpeg', 0.95);
+      a.click();
+    }
+
+    // --- Preset Management & LocalStorage ---
+    function openSaveModal() {
+      if (!state.extractedProfile) return;
+      document.getElementById('modal-palette-preview').innerHTML = state.extractedProfile.palette.map(hex => `
+        <div class="flex-1 h-full" style="background-color: ${hex}"></div>
+      `).join('');
+      document.getElementById('preset-name-input').value = `Preset #${state.presets.length + 1}`;
+      document.getElementById('save-modal').classList.remove('hidden');
+    }
+
+    function closeSaveModal() {
+      document.getElementById('save-modal').classList.add('hidden');
+    }
+
+    function confirmSavePreset() {
+      const name = document.getElementById('preset-name-input').value.trim() || 'Preset Không Tên';
+      const newPreset = {
+        id: 'p_' + Date.now(),
+        name: name,
+        profile: { ...state.extractedProfile }
+      };
+
+      state.presets.unshift(newPreset);
+      localStorage.setItem('colorby_web_presets', JSON.stringify(state.presets));
+      closeSaveModal();
+      switchTab('apply');
+      selectPresetToApply(newPreset.id);
+    }
+
+    function loadPresetsFromStorage() {
+      const saved = localStorage.getItem('colorby_web_presets');
+      if (saved) {
+        try { state.presets = JSON.parse(saved); } catch (e) { state.presets = []; }
+      } else {
+        state.presets = [
+          {
+            id: 'sample_vintage',
+            name: 'Vintage Film 35mm',
+            profile: { brightness: 102, contrast: 115, saturation: 120, temp: 25, palette: ['#78350f', '#d97706', '#fef3c7', '#92400e', '#b45309'] }
+          },
+          {
+            id: 'sample_cyber',
+            name: 'Cyberpunk Tone',
+            profile: { brightness: 105, contrast: 130, saturation: 145, temp: -30, palette: ['#0f172a', '#3b82f6', '#ec4899', '#8b5cf6', '#06b6d4'] }
+          }
+        ];
+      }
+    }
+
+    function renderApplyPresetsStrip() {
+      const container = document.getElementById('apply-presets-strip');
+      
+      let html = `
+        <button onclick="selectPresetToApply('original')" class="flex-none w-16 h-16 rounded-xl bg-slate-900 border border-slate-700 flex flex-col items-center justify-center p-1 active:scale-95 transition-all">
+          <i data-lucide="rotate-ccw" class="w-4 h-4 text-slate-400 mb-1"></i>
+          <span class="text-[9px] font-bold text-slate-300 truncate w-full text-center">Gốc</span>
+        </button>
+      `;
+
+      html += state.presets.map(p => `
+        <button onclick="selectPresetToApply('${p.id}')" class="flex-none w-16 h-16 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-between p-1.5 active:scale-95 transition-all hover:border-indigo-500">
+          <div class="w-full h-5 rounded-md overflow-hidden flex shadow-inner">
+            ${p.profile.palette.slice(0, 3).map(hex => `<div class="flex-1 h-full" style="background-color:${hex}"></div>`).join('')}
+          </div>
+          <span class="text-[9px] font-bold text-slate-200 truncate w-full text-center mt-1">${p.name}</span>
+        </button>
+      `).join('');
+
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function selectPresetToApply(id) {
+      if (id === 'original') {
+        state.activePreset = null;
+        document.getElementById('active-preset-label').innerText = 'Preset: Gốc';
+      } else {
+        const p = state.presets.find(x => x.id === id);
+        if (p) {
+          state.activePreset = p;
+          document.getElementById('active-preset-label').innerText = `Preset: ${p.name}`;
+        }
+      }
+      renderTargetCanvas();
+    }
+
+    function renderPresetsGrid() {
+      const grid = document.getElementById('presets-grid');
+      if (state.presets.length === 0) {
+        grid.innerHTML = `<div class="col-span-2 text-center py-10 text-slate-500 text-xs">Chưa có preset nào được lưu.</div>`;
+        return;
+      }
+
+      grid.innerHTML = state.presets.map(p => `
+        <div class="glass-panel rounded-2xl p-3 border border-slate-800/80 flex flex-col justify-between space-y-2">
+          <div>
+            <div class="h-8 rounded-lg overflow-hidden flex mb-2 border border-white/5">
+              ${p.profile.palette.map(hex => `<div class="flex-1 h-full" style="background-color:${hex}"></div>`).join('')}
+            </div>
+            <h4 class="font-bold text-xs text-slate-100 truncate">${p.name}</h4>
+            <p class="text-[9px] text-slate-400">Sáng: ${p.profile.brightness}% | Áp: ${p.profile.temp}°</p>
+          </div>
+          <div class="flex gap-1.5 pt-1">
+            <button onclick="applyAndSwitch('${p.id}')" class="flex-1 py-1 rounded-lg bg-indigo-600/90 text-white text-[10px] font-bold active:scale-95">Dùng</button>
+            <button onclick="deletePreset('${p.id}')" class="p-1 rounded-lg bg-red-950/40 text-red-400 text-[10px] active:scale-95">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function applyAndSwitch(id) {
+      switchTab('apply');
+      selectPresetToApply(id);
+    }
+
+    function deletePreset(id) {
+      state.presets = state.presets.filter(p => p.id !== id);
+      localStorage.setItem('colorby_web_presets', JSON.stringify(state.presets));
+      renderPresetsGrid();
+    }
+
+    // Startup
+    window.onload = () => {
+      loadPresetsFromStorage();
+    };
   </script>
   <script type="module">
   // Import the functions you need from the SDKs you need
