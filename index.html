@@ -674,13 +674,12 @@
       loadPresetsFromStorage();
     };
   </script>
-  <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+  <!-- Tải thư viện Firebase Compat SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-  // Your web app's Firebase configuration
+<script>
+  // Cấu hình Firebase của bạn
   const firebaseConfig = {
     apiKey: "AIzaSyDHiva275Mw4y-uhiLX2rN7O0X-Um9Zj1I",
     authDomain: "colorby-pro-c8550.firebaseapp.com",
@@ -690,8 +689,12 @@
     appId: "1:651005407679:web:962c1e63b1e7ee79c6310a"
   };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
+  // Khởi tạo an toàn
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+  const db = firebase.firestore();
+  console.log("Firebase đã kết nối thành công!");
 </script>
 </body>
 </html>
