@@ -84,6 +84,10 @@
       hyphens: auto;
     }
   </style>
+
+  <!-- Firebase App & Firestore SDK Compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
 <body class="h-full flex flex-col font-sans select-none bg-slate-950 text-slate-100 overflow-hidden">
 
@@ -273,7 +277,7 @@
       <div class="flex items-center justify-between mb-4 gap-2">
         <div>
           <h2 class="text-sm font-bold text-slate-100 word-break-safe">Bộ Sưu Tập Preset</h2>
-          <p class="text-[11px] text-slate-400 word-break-safe">Các bộ lọc màu đã được bạn trích xuất & lưu lại</p>
+          <p class="text-[11px] text-slate-400 word-break-safe">Các bộ lọc màu đồng bộ đám mây (Cloud Firestore)</p>
         </div>
         <button onclick="switchTab('extract')" class="glass-btn px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-300 flex items-center gap-1 shrink-0 active:scale-95">
           <i data-lucide="plus" class="w-3.5 h-3.5"></i>
@@ -294,7 +298,7 @@
     <div class="glass-panel w-full max-w-xs rounded-3xl p-4 border border-slate-800 shadow-2xl space-y-4">
       <div class="flex items-center gap-2">
         <i data-lucide="bookmark-plus" class="w-5 h-5 text-indigo-400 shrink-0"></i>
-        <h3 class="text-sm font-bold text-slate-100 word-break-safe">Lưu Preset Bộ Lọc</h3>
+        <h3 class="text-sm font-bold text-slate-100 word-break-safe">Lưu Preset Lên Đám Mây</h3>
       </div>
 
       <div>
@@ -309,13 +313,29 @@
 
       <div class="flex gap-2 pt-2">
         <button onclick="closeSaveModal()" class="flex-1 py-2 rounded-xl text-xs font-semibold glass-btn text-slate-300">Hủy</button>
-        <button onclick="confirmSavePreset()" class="flex-1 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-600/30">Lưu Ngay</button>
+        <button onclick="confirmSavePreset()" class="flex-1 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-600/30">Lưu Lên Cloud</button>
       </div>
     </div>
   </div>
 
-  <!-- SCRIPT ENGINE -->
+  <!-- FIREBASE & APP SCRIPT ENGINE -->
   <script>
+    // --- 1. Khởi tạo Firebase Compat ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyDHiva275Mw4y-uhiLX2rN7O0X-Um9Zj1I",
+      authDomain: "colorby-pro-c8550.firebaseapp.com",
+      projectId: "colorby-pro-c8550",
+      storageBucket: "colorby-pro-c8550.firebasestorage.app",
+      messagingSenderId: "651005407679",
+      appId: "1:651005407679:web:962c1e63b1e7ee79c6310a"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+    console.log("Firebase đã kết nối thành công!");
+
     lucide.createIcons();
 
     // Global Application State
@@ -341,7 +361,7 @@
       activeBtn.className = "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all bg-indigo-600 text-white shadow-md";
 
       if (tabId === 'presets') {
-        renderPresetsGrid();
+        loadPresetsFromFirestore();
       } else if (tabId === 'apply') {
         renderApplyPresetsStrip();
       }
@@ -388,7 +408,6 @@
       document.getElementById('ref-placeholder').classList.add('hidden');
       document.getElementById('ref-viewport').classList.remove('hidden');
 
-      // Analyze Pixels
       const imageData = ctx.getImageData(0, 0, width, height);
       const data = imageData.data;
 
@@ -443,7 +462,6 @@
         palette: sortedPalette
       };
 
-      // Render UI
       document.getElementById('param-brightness').innerText = `${state.extractedProfile.brightness}%`;
       document.getElementById('param-contrast').innerText = `${state.extractedProfile.contrast}%`;
       document.getElementById('param-saturation').innerText = `${state.extractedProfile.saturation}%`;
@@ -475,7 +493,6 @@
           document.getElementById('target-placeholder').classList.add('hidden');
           document.getElementById('target-viewport').classList.remove('hidden');
 
-          // Default auto apply extracted profile if available
           if (state.extractedProfile && !state.activePreset) {
             state.activePreset = { name: "Mới Trích Xuất", profile: state.extractedProfile };
           }
@@ -522,7 +539,6 @@
       ctx.restore();
     }
 
-    // Hold Compare Before/After
     const btnCompare = document.getElementById('btn-compare');
     btnCompare.onpointerdown = () => {
       const canvas = document.getElementById('target-canvas');
@@ -545,7 +561,7 @@
       a.click();
     }
 
-    // --- Preset Management & LocalStorage ---
+    // --- Preset Management & Firebase Firestore Sync ---
     function openSaveModal() {
       if (!state.extractedProfile) return;
       document.getElementById('modal-palette-preview').innerHTML = state.extractedProfile.palette.map(hex => `
@@ -559,43 +575,59 @@
       document.getElementById('save-modal').classList.add('hidden');
     }
 
-    function confirmSavePreset() {
+    async function confirmSavePreset() {
       const name = document.getElementById('preset-name-input').value.trim() || 'Preset Không Tên';
-      const newPreset = {
-        id: 'p_' + Date.now(),
+      const newPresetData = {
         name: name,
-        profile: { ...state.extractedProfile }
+        profile: { ...state.extractedProfile },
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
       };
 
-      state.presets.unshift(newPreset);
-      localStorage.setItem('colorby_web_presets', JSON.stringify(state.presets));
-      closeSaveModal();
-      switchTab('apply');
-      selectPresetToApply(newPreset.id);
+      try {
+        const docRef = await db.collection('presets').add(newPresetData);
+        state.presets.unshift({
+          id: docRef.id,
+          ...newPresetData
+        });
+
+        closeSaveModal();
+        switchTab('apply');
+        renderApplyPresetsStrip();
+        selectPresetToApply(docRef.id);
+      } catch (error) {
+        console.error("Lỗi lưu preset lên Firebase:", error);
+        alert("Lưu thất bại! Hãy kiểm tra lại kết nối mạng hoặc Firestore Rules.");
+      }
     }
 
-    function loadPresetsFromStorage() {
-      const saved = localStorage.getItem('colorby_web_presets');
-      if (saved) {
-        try { state.presets = JSON.parse(saved); } catch (e) { state.presets = []; }
-      } else {
-        state.presets = [
-          {
-            id: 'sample_vintage',
-            name: 'Vintage Film 35mm',
-            profile: { brightness: 102, contrast: 115, saturation: 120, temp: 25, palette: ['#78350f', '#d97706', '#fef3c7', '#92400e', '#b45309'] }
-          },
-          {
-            id: 'sample_cyber',
-            name: 'Cyberpunk Tone',
-            profile: { brightness: 105, contrast: 130, saturation: 145, temp: -30, palette: ['#0f172a', '#3b82f6', '#ec4899', '#8b5cf6', '#06b6d4'] }
-          }
-        ];
+    async function loadPresetsFromFirestore() {
+      try {
+        const snapshot = await db.collection('presets').get();
+        state.presets = [];
+        snapshot.forEach(doc => {
+          state.presets.push({ id: doc.id, ...doc.data() });
+        });
+
+        if (state.presets.length === 0) {
+          state.presets = [
+            {
+              id: 'sample_vintage',
+              name: 'Vintage Film 35mm',
+              profile: { brightness: 102, contrast: 115, saturation: 120, temp: 25, palette: ['#78350f', '#d97706', '#fef3c7', '#92400e', '#b45309'] }
+            }
+          ];
+        }
+      } catch (error) {
+        console.error("Lỗi tải preset từ Firebase:", error);
       }
+
+      renderPresetsGrid();
+      renderApplyPresetsStrip();
     }
 
     function renderApplyPresetsStrip() {
       const container = document.getElementById('apply-presets-strip');
+      if (!container) return;
       
       let html = `
         <button onclick="selectPresetToApply('original')" class="flex-none w-16 h-16 rounded-xl bg-slate-900 border border-slate-700 flex flex-col items-center justify-center p-1 active:scale-95 transition-all">
@@ -633,8 +665,10 @@
 
     function renderPresetsGrid() {
       const grid = document.getElementById('presets-grid');
+      if (!grid) return;
+
       if (state.presets.length === 0) {
-        grid.innerHTML = `<div class="col-span-2 text-center py-10 text-slate-500 text-xs">Chưa có preset nào được lưu.</div>`;
+        grid.innerHTML = `<div class="col-span-2 text-center py-10 text-slate-500 text-xs">Chưa có preset nào trên đám mây.</div>`;
         return;
       }
 
@@ -663,38 +697,27 @@
       selectPresetToApply(id);
     }
 
-    function deletePreset(id) {
-      state.presets = state.presets.filter(p => p.id !== id);
-      localStorage.setItem('colorby_web_presets', JSON.stringify(state.presets));
-      renderPresetsGrid();
+    async function deletePreset(id) {
+      if (id.startsWith('sample_')) {
+        state.presets = state.presets.filter(p => p.id !== id);
+        renderPresetsGrid();
+        return;
+      }
+
+      try {
+        await db.collection('presets').doc(id).delete();
+        state.presets = state.presets.filter(p => p.id !== id);
+        renderPresetsGrid();
+        renderApplyPresetsStrip();
+      } catch (error) {
+        console.error("Lỗi khi xóa preset trên Firebase:", error);
+      }
     }
 
     // Startup
     window.onload = () => {
-      loadPresetsFromStorage();
+      loadPresetsFromFirestore();
     };
   </script>
-  <!-- Tải thư viện Firebase Compat SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
-<script>
-  // Cấu hình Firebase của bạn
-  const firebaseConfig = {
-    apiKey: "AIzaSyDHiva275Mw4y-uhiLX2rN7O0X-Um9Zj1I",
-    authDomain: "colorby-pro-c8550.firebaseapp.com",
-    projectId: "colorby-pro-c8550",
-    storageBucket: "colorby-pro-c8550.firebasestorage.app",
-    messagingSenderId: "651005407679",
-    appId: "1:651005407679:web:962c1e63b1e7ee79c6310a"
-  };
-
-  // Khởi tạo an toàn
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-  }
-  const db = firebase.firestore();
-  console.log("Firebase đã kết nối thành công!");
-</script>
 </body>
 </html>
