@@ -31,11 +31,17 @@
       }
     }
   </script>
+  
   <style>
     /* Mobile scrollbar & touch protection */
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
     ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.5); border-radius: 999px; }
+    
+    #apply-presets-strip {
+      touch-action: pan-x; /* Giúp trình duyệt di động phân biệt rõ thao tác vuốt cuộn ngang và thao tác bấm */
+      -webkit-overflow-scrolling: touch;
+    }
     
     .glass-panel {
       background: rgba(15, 23, 42, 0.85);
@@ -630,21 +636,21 @@
       if (!container) return;
       
       let html = `
-        <button onclick="selectPresetToApply('original')" class="flex-none w-16 h-16 rounded-xl bg-slate-900 border border-slate-700 flex flex-col items-center justify-center p-1 active:scale-95 transition-all">
+        <button type="button" onclick="selectPresetToApply('original')" class="flex-none w-16 h-16 rounded-xl bg-slate-900 border border-slate-700 flex flex-col items-center justify-center p-1 active:scale-95 transition-all cursor-pointer">
           <i data-lucide="rotate-ccw" class="w-4 h-4 text-slate-400 mb-1"></i>
           <span class="text-[9px] font-bold text-slate-300 truncate w-full text-center">Gốc</span>
         </button>
       `;
-
+    
       html += state.presets.map(p => `
-        <button onclick="selectPresetToApply('${p.id}')" class="flex-none w-16 h-16 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-between p-1.5 active:scale-95 transition-all hover:border-indigo-500">
-          <div class="w-full h-5 rounded-md overflow-hidden flex shadow-inner">
+        <button type="button" onclick="selectPresetToApply('${p.id}')" class="flex-none w-16 h-16 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-between p-1.5 active:scale-95 transition-all hover:border-indigo-500 cursor-pointer">
+          <div class="w-full h-5 rounded-md overflow-hidden flex shadow-inner pointer-events-none">
             ${p.profile.palette.slice(0, 3).map(hex => `<div class="flex-1 h-full" style="background-color:${hex}"></div>`).join('')}
           </div>
           <span class="text-[9px] font-bold text-slate-200 truncate w-full text-center mt-1">${p.name}</span>
         </button>
       `).join('');
-
+    
       container.innerHTML = html;
       lucide.createIcons();
     }
